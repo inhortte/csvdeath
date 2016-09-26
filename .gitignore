@@ -1,0 +1,10 @@
+data/**
+*.rdb
+dist
+.tmp
+.sass-cache
+*~
+server/**
+npm-debug.log
+*.csv
+node_modules/**
