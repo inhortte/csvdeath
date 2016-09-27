@@ -108,7 +108,9 @@ const csvdeath = (csvfile, directory) => new Promise((resolve, reject) => {
 	  if(!R.isEmpty(dMap)) {
 	    writeLine(dMap);
 	  }
-	}, files);
+	}, R.filter(f => {
+	  return R.test(/\.txt$/, f);
+	}, files));
 
 	fs.close(fd, err => {
 	  if(err) {
