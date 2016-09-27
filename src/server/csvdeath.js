@@ -48,6 +48,14 @@ const fetchLabels = directory => new Promise((resolve, reject) => {
 
 const csvdeath = (csvfile, directory) => new Promise((resolve, reject) => {
   fetchLabels(directory).then(labels => {
+    /*
+     * Impinged labels for Christián's lettuce thurk
+     */
+    let labelHead = ["Payment_Date", "Payment_Amount", "Name_on_Check", "Address", "City", "State", "Zip_Code", "Bank", "Routing_Number", "Account_Number", "memo", "Recurring_Every", "Recurring", "End_After", "Email", "Phone_Number_For_Payor", "Country", "Check_Number"];
+    labels = R.map(label => {
+      return label.toLowerCase().replace(/_/g, ' ');
+    }, labelHead);
+    
     console.log(`our labels are: ${JSON.stringify(labels)}`);
     fs.open(csvfile, 'wx', (err, fd) => {
       if(err) {
@@ -58,7 +66,19 @@ const csvdeath = (csvfile, directory) => new Promise((resolve, reject) => {
       fs.writeSync(fd, R.compose(
 	R.join(','),
 	R.map(label => R.compose(R.join('_'), R.split(/\s+/))(label))
-      )(labels) + "\n");
+      )(labelHead) + "\n");
+
+      const writeLine = (dMap) => {
+	dMap['memo'] = "Ethno Trade final sale";
+	dMap['payment date'] = "9/26/2016";
+	fs.writeSync(fd, R.compose(
+	  R.join(','),
+	  R.map(label => {
+	    let d = dMap[label] ? dMap[label].replace(/,/g, '') : '';
+	    return d;
+	  })
+	)(labels) + "\n");
+      };
 
       fs.readdir(directory, (err, files) => {
 	if(err) {
@@ -72,13 +92,7 @@ const csvdeath = (csvfile, directory) => new Promise((resolve, reject) => {
 	  R.forEach(line => {
 	    if(R.compose(R.isEmpty, R.trim)(line)) {
 	      if(!R.isEmpty(dMap)) {
-		fs.writeSync(fd, R.compose(
-		  R.join(','),
-		  R.map(label => {
-		    let d = dMap[label] ? dMap[label].replace(/,/g, '') : '';
-		    return d;
-		  })
-		)(labels) + "\n");
+		writeLine(dMap);
 		dMap = {};
 	      }
 	    } else {
@@ -87,10 +101,13 @@ const csvdeath = (csvfile, directory) => new Promise((resolve, reject) => {
 		R.trim
 	      )(line);
 	      if(label && d) {
-		dMap[R.trim(label)] = R.trim(d);
+		dMap[R.trim(label).toLowerCase()] = R.trim(d);
 	      }
 	    }
 	  }, R.split('\n', data.toString()));
+	  if(!R.isEmpty(dMap)) {
+	    writeLine(dMap);
+	  }
 	}, files);
 
 	fs.close(fd, err => {
